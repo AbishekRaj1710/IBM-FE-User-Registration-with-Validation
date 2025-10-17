@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IBM-FE User Registration</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gray-900 flex items-center justify-center p-4" style="font-family: 'Inter', sans-serif;">
+
+    <div class="w-full max-w-md bg-white p-8 rounded-xl shadow-2xl border-t-4 border-green-500">
+
+        <!-- Header -->
+        <div class="text-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">IBM-FE Registration</h1>
+            <p class="text-gray-500 text-sm">Create your account with secure validation.</p>
+        </div>
+
+        <!-- Submission Message Area -->
+        <div id="msgArea" role="status" class="hidden p-3 rounded font-medium mb-4 text-center"></div>
+
+        <!-- Registration Form -->
+        <form id="regForm" novalidate>
+            <!-- Full Name Input -->
+            <div class="mb-4">
+                <label for="fullName" class="block text-sm font-semibold text-gray-700 mb-1">Full Name</label>
+                <input type="text" id="fullName" name="fullName" class="w-full p-2 border rounded-lg focus:border-green-500">
+                <p id="fullName-error" class="mt-1 text-xs text-red-500 hidden"></p>
+            </div>
+
+            <!-- Email Input -->
+            <div class="mb-4">
+                <label for="email" class="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+                <input type="email" id="email" name="email" class="w-full p-2 border rounded-lg focus:border-green-500">
+                <p id="email-error" class="mt-1 text-xs text-red-500 hidden"></p>
+            </div>
+
+            <!-- Password Input -->
+            <div class="mb-4">
+                <label for="password" class="block text-sm font-semibold text-gray-700 mb-1">Password</label>
+                <input type="password" id="password" name="password" class="w-full p-2 border rounded-lg focus:border-green-500">
+                <p id="password-error" class="mt-1 text-xs text-red-500 hidden"></p>
+                <p id="passHint" class="mt-1 text-xs text-gray-500 hidden">
+                    Min 4 chars, 1 Uppercase, 1 lowercase, 1 number, 1 special char.
+                </p>
+            </div>
+
+            <!-- Confirm Password Input -->
+            <div class="mb-6">
+                <label for="confirmPassword" class="block text-sm font-semibold text-gray-700 mb-1">Confirm Password</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" class="w-full p-2 border rounded-lg focus:border-green-500">
+                <p id="confirmPassword-error" class="mt-1 text-xs text-red-500 hidden"></p>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" id="regBtn"
+                class="w-full py-3 rounded-lg font-bold text-white transition duration-300 bg-green-600 hover:bg-green-700 shadow-lg hover:shadow-xl">
+                Register Account
+            </button>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('regForm');
+        const submitBtn = document.getElementById('regBtn');
+        const msgArea = document.getElementById('msgArea');
+        const passHint = document.getElementById('passHint');
+
+        const patterns = {
+            email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+            // Min 4 chars, requires 1 uppercase, 1 lowercase, 1 number, 1 special char
+            password: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{4,}$/,
+        };
+
+        // Utility to show/hide error and apply border styling
+        const showErr = (field, msg = '') => {
+            const errEl = document.getElementById(`${field}-error`);
+            const inputEl = document.getElementById(field);
+
+            if (errEl && inputEl) {
+                const isError = !!msg;
+                errEl.textContent = msg;
+                errEl.classList.toggle('hidden', !isError);
+                inputEl.classList.toggle('border-red-500', isError);
+                inputEl.classList.toggle('border-gray-300', !isError);
+                inputEl.setAttribute('aria-invalid', isError);
+            }
+        };
+
+        // Gets form data as a trimmed object
+        const getFormData = () => {
+            const data = {};
+            new FormData(form).forEach((value, key) => data[key] = key === 'fullName' ? value.trim() : value);
+            return data;
+        };
+
+        // Displays the overall submission message (success or error)
+        const displayMsg = (type, text) => {
+            msgArea.textContent = text;
+            msgArea.classList.remove('hidden', 'bg-red-200', 'text-red-800', 'bg-green-200', 'text-green-800');
+
+            if (type === 'success') {
+                msgArea.classList.add('bg-green-200', 'text-green-800');
+            } else if (type === 'error') {
+                msgArea.classList.add('bg-red-200', 'text-red-800');
+            }
+            msgArea.classList.remove('hidden');
+        };
+
+        // Main validation function
+        const validateForm = (data, field = null) => {
+            let isValid = true;
+            const fields = ['fullName', 'email', 'password', 'confirmPassword'];
+            
+            // Clear current error state on all fields or the specific field
+            fields.forEach(f => { if (!field || f === field) showErr(f); });
+
+            // 1. Full Name
+            if ((!field || field === 'fullName') && !data.fullName) {
+                showErr('fullName', 'Full Name is required.'); isValid = false;
+            }
+
+            // 2. Email
+            if (!data.email && (!field || field === 'email')) {
+                showErr('email', 'Email is required.'); isValid = false;
+            } else if ((!field || field === 'email') && !patterns.email.test(data.email)) {
+                showErr('email', 'Email address is invalid.'); isValid = false;
+            }
+
+            // 3. Password
+            if (!data.password && (!field || field === 'password')) {
+                showErr('password', 'Password is required.'); isValid = false;
+            } else if (data.password && (!field || field === 'password')) {
+                if (data.password.length < 4) {
+                    showErr('password', 'Password must be at least 4 characters long.'); isValid = false;
+                } else if (!patterns.password.test(data.password)) {
+                    showErr('password', 'Must include uppercase, lowercase, number, and special character.'); isValid = false;
+                }
+            }
+            
+            // 4. Confirm Password (Always check if password changes or confirmPassword changes)
+            if (data.password && (!field || field === 'confirmPassword' || field === 'password')) {
+                if (!data.confirmPassword) {
+                    showErr('confirmPassword', 'Confirm Password is required.'); isValid = false;
+                } else if (data.confirmPassword !== data.password) {
+                    showErr('confirmPassword', 'Passwords do not match.'); isValid = false;
+                }
+            }
+
+            // Show password hint only when password field has focus or has content
+            passHint.classList.toggle('hidden', data.password.length === 0 && field !== 'password');
+            
+            return isValid;
+        };
+
+        // Handles form submission
+        const handleSubmit = (e) => {
+            e.preventDefault();
+            msgArea.classList.add('hidden');
+
+            const data = getFormData();
+            
+            if (validateForm(data)) {
+                // Form is valid: Simulate submission
+
+                // 1. Disable form and show loading state
+                submitBtn.disabled = true;
+                submitBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                submitBtn.classList.add('bg-green-400', 'cursor-not-allowed');
+                submitBtn.textContent = 'Registering...';
+
+                // 2. Simulate API call delay (2 seconds)
+                setTimeout(() => {
+                    // 3. Display success message
+                    displayMsg('success', 'Registration successful! Proceeding...');
+
+                    // 4. Reset form and button state
+                    form.reset();
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('bg-green-400', 'cursor-not-allowed');
+                    submitBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                    submitBtn.textContent = 'Register Account';
+                    passHint.classList.add('hidden');
+                }, 2000);
+
+            } else {
+                // Form is invalid
+                displayMsg('error', 'Please correct the errors in the form before submitting.');
+                
+                // Ensure button is active
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('bg-green-400', 'cursor-not-allowed');
+                submitBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                submitBtn.textContent = 'Register Account';
+            }
+        };
+
+        // Attach event listeners on load
+        window.onload = function() {
+            form.addEventListener('submit', handleSubmit);
+            // Centralized listener for real-time validation feedback
+            form.addEventListener('input', (e) => {
+                if (e.target.name) validateForm(getFormData(), e.target.name);
+            }); 
+        };
+
+    </script>
+</body>
+</html>
